@@ -2,6 +2,11 @@ import requests
 from bs4 import BeautifulSoup as bs
 import json
 import argparse
+import re
+import csv
+
+
+PATTERN = r"^([A-Za-z ]*)(?:- )*([0-9]+.*)"
 
 def get_product():
     """
@@ -30,10 +35,27 @@ class DarazScraper:
         # print(data)
         return json.loads(data)['mods']['listItems']
     
+    
+    def save_data(self, items):
+        with open("data/items.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(['Product', 'Quantity'])
+            for item in items:
+                print(item)
+                writer.writerow([item[0][0].strip(), item[0][1]])
+    
     def get_data(self):
+        """
+
+        Returns:
+            items (list): list of tuples containing the item name and its quantity  
+        """
         data = self.get_request_json()
-        for item in data:
-            print(item['name'])
+        patt = re.compile(PATTERN)
+        items = [patt.findall(i['name']) for i in data if patt.findall(i['name'])]
+        
+        self.save_data(items)
+        return items
             # print(item.name)
         # return soup.select_one(".title--wFj93")
 
