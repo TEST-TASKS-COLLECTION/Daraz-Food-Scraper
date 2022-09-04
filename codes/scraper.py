@@ -25,20 +25,20 @@ def unit_parser(item):
         return 
     if d[0][0]:
         return_dict = {
-            "name": d[0][0],
+            "name": d[0][0].strip().title(),
             "amount": d[0][1],
-            "unit": d[0][2],
+            "unit": d[0][2].strip(),
         }
         return standarize_unit(return_dict)
 
 
 def standarize_unit(item):
-    if item['unit'] in ['ml']:
-        item['amount'] = str(int(item['amount']) / 1000)
-        item['unit'] = "l"
-    elif item['unit'] in ['g', 'gm']:
-        item['amount'] = str(int(item['amount']) / 1000)
-        item['unit'] = "kg"
+    if item['unit'] in ['l', 'ltr']:
+        item['amount'] = str(int(item['amount']) * 1000)
+        item['unit'] = "ml"
+    elif item['unit'] in ['kg']:
+        item['amount'] = str(int(item['amount']) * 1000)
+        item['unit'] = "gm"
     
     return item
 
