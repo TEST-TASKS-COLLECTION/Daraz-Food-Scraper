@@ -35,7 +35,7 @@ def unit_parser(item, standarize=False):
             return return_dict
         return standarize_unit(return_dict)
 
-def save_data(product, path, data):
+def save_data(path, data):
     with open(path, "w") as f:
         writer = csv.writer(f)
         writer.writerow(['Product', 'Quantity', "Unit"])
@@ -70,12 +70,12 @@ def standarize_unit(item):
 
 class DarazScraper:
     
-    def __init__(self, query):
+    def __init__(self, query, mode):
         self.query = query
         self.url = f'https://www.daraz.com.np/catalog/?ajax=true&q={query}'
         self.parse_path = f"data/{query}.csv"
         self.process_path = f"data/{query}_std.csv"
-        self.run()
+        eval(f"self.{mode}()")
     
     def get_request_json(self):
         res = requests.get(self.url).json()
@@ -93,7 +93,7 @@ class DarazScraper:
         items = [unit_parser(i, standarize) for i in data if unit_parser(i)]
         print(items)
         path = self.parse_path
-        save_data(self.query, path, items)
+        save_data(path, items)
         return items
 
         
@@ -108,7 +108,7 @@ class DarazScraper:
         items = [standarize_unit(item) for item in items]
         
         path = self.process_path
-        save_data(self.query, path, items)
+        save_data(path, items)
 
     def run(self):
             self.scrape()
@@ -116,8 +116,7 @@ class DarazScraper:
 
 
 if __name__ == "__main__":
-    product = get_product()
+    product, mode = get_product()
     # scrape(product)
     # process(product)
-    scraper = DarazScraper(product)
-    run(product)
+    scraper = DarazScraper(product, mode)
