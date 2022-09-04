@@ -16,7 +16,7 @@ def get_product():
     """
     parser = argparse.ArgumentParser(description="A Daraz food product scraper")
     parser.add_argument("--prod", help="Food Product Name")
-    parser.add_argument("--mode", help="Mode to run your program (parse, process, run(default, parse + process)", default="run")
+    parser.add_argument("--mode", help="Mode to run your program (parse, process, run(default, scrap + process)", default="run")
     args = parser.parse_args()
     return args.prod, args.mode
     
@@ -68,9 +68,11 @@ def standarize_unit(item):
     
     return item
 
+
 class DarazScraper:
     
-    def __init__(self, query, mode):
+    
+    def __init__(self, query, mode=run):
         self.query = query
         self.url = f'https://www.daraz.com.np/catalog/?ajax=true&q={query}'
         self.parse_path = f"data/{query}.csv"
@@ -80,8 +82,6 @@ class DarazScraper:
     def get_request_json(self):
         res = requests.get(self.url).json()
         return res['mods']['listItems']
-    
-    
 
     def get_data(self, standarize=True):
         """
@@ -97,7 +97,7 @@ class DarazScraper:
         return items
 
         
-    def scrape(self):
+    def scrap(self):
         if not os.path.isfile(self.parse_path):
             self.get_data(False)
         else:
@@ -111,7 +111,7 @@ class DarazScraper:
         save_data(path, items)
 
     def run(self):
-            self.scrape()
+            self.scrap()
             self.process()
 
 
