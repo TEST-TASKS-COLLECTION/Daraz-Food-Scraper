@@ -40,21 +40,24 @@ def save_data(path, data):
         writer = csv.writer(f)
         writer.writerow(['Product', 'Quantity', "Unit"])
         for item in data:
-            print(item)
-            writer.writerow([item["name"].strip(), item["amount"].strip(), item["unit"].strip()])
+            # print(item)
+            writer.writerow([item["name"].strip(), str(float(item["amount"])).strip(), item["unit"].strip()])
 
 def read_data(path):
         items = []
-        with open(path) as f:
-            next(f)
-            r = csv.reader(f)
-            for i in r:
-                items.append({
-                    "name": i[0].strip(),
-                    "amount": i[1],
-                    "unit": i[2].strip()
-                })
-        return items
+        try:
+            with open(path) as f:
+                next(f)
+                r = csv.reader(f)
+                for i in r:
+                    items.append({
+                        "name": i[0].strip(),
+                        "amount": i[1],
+                        "unit": i[2].strip()
+                    })
+            return items
+        except FileNotFoundError:
+            print("File doesn't exist try running in scrap mode or run mode")
 
 
 def standarize_unit(item):
@@ -64,6 +67,8 @@ def standarize_unit(item):
         item['unit'] = "ml"
     elif item['unit'] in ['kg']:
         item['amount'] = str(float(item['amount']) * 1000)
+        item['unit'] = "gm"
+    elif item['unit'] in ['g']:
         item['unit'] = "gm"
     
     return item
