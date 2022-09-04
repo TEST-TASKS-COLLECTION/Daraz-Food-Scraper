@@ -1,3 +1,4 @@
+from unicodedata import name
 import requests
 from bs4 import BeautifulSoup as bs
 import json
@@ -6,7 +7,7 @@ import re
 import csv
 
 
-PATTERN = r"^([A-Za-z ]*)(?:- )*([0-9]+[ g|kg|gm|ml|l|ltr]+)"
+PATTERN = r"^([A-Za-z ]*)(?:- )*([0-9]+)([ g|kg|gm|ml|l|ltr]*)"
 
 def get_product():
     """
@@ -23,8 +24,23 @@ def unit_parser(item):
     if not d:
         return 
     if d[0][0]:
-        return d[0]
+        return_dict = {
+            "name": d[0][0],
+            "amount": d[0][1],
+            "unit": d[0][2],
+        }
+        return standarize_unit(return_dict)
 
+
+def standarize_unit(item):
+    if item['unit'] in ['ml']:
+        item['amount'] = str(int(item['amount']) / 1000)
+        item['unit'] = "l"
+    elif item['unit'] in ['g', 'gm']:
+        item['amount'] = str(int(item['amount']) / 1000)
+        item['unit'] = "kg"
+    
+    return item
 
 class DarazScraper:
     
@@ -37,13 +53,13 @@ class DarazScraper:
         return res['mods']['listItems']
     
     
-    def save_data(self, items):
+    def save_data(self, data):
         with open(f"data/{self.query}.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow(['Product', 'Quantity'])
-            for item in items:
+            writer.writerow(['Product', 'Quantity', "Unit"])
+            for item in data:
                 print(item)
-                writer.writerow([item[0][0].strip(), item[0][1].strip()])
+                writer.writerow([item["name"].strip(), item["amount"].strip(), item["unit"].strip()])
     
     def get_data(self):
         """
@@ -54,7 +70,7 @@ class DarazScraper:
         
         items = [unit_parser(i) for i in data if unit_parser(i)]
         # items = [patt.findall(i['name'].lower()) for i in data if patt.findall(i['name'])]
-        
+        print(items)
         self.save_data(items)
         return items
             # print(item.name)
