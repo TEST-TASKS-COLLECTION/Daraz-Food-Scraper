@@ -23,7 +23,7 @@ def unit_parser(item):
     if not d:
         return 
     if d[0][0]:
-        return d
+        return d[0]
 
 
 class DarazScraper:
