@@ -16,6 +16,14 @@ def get_product():
     parser.add_argument("--prod", help="Food Product Name")
     args = parser.parse_args()
     return args.prod
+    
+def unit_parser(item):
+    patt = re.compile(PATTERN)
+    d = patt.findall(item['name'].lower())
+    if not d:
+        return 
+    if d[0][0]:
+        return d
 
 
 class DarazScraper:
@@ -37,14 +45,6 @@ class DarazScraper:
                 print(item)
                 writer.writerow([item[0][0].strip(), item[0][1].strip()])
     
-    def unit_parser(self, item):
-        patt = re.compile(PATTERN)
-        d = patt.findall(item['name'].lower())
-        if not d:
-            return 
-        if d[0][0]:
-            return d
-    
     def get_data(self):
         """
         Returns:
@@ -52,7 +52,7 @@ class DarazScraper:
         """
         data = self.get_request_json()
         
-        items = [self.unit_parser(i) for i in data if self.unit_parser(i)]
+        items = [unit_parser(i) for i in data if unit_parser(i)]
         # items = [patt.findall(i['name'].lower()) for i in data if patt.findall(i['name'])]
         
         self.save_data(items)
