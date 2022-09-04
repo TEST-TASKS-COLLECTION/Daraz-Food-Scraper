@@ -28,7 +28,7 @@ def unit_parser(item, standarize=False):
     if d[0][0]:
         return_dict = {
             "name": d[0][0].strip().title(),
-            "amount": d[0][1],
+            "amount": str(float(d[0][1])),
             "unit": d[0][2].strip(),
         }
         if not standarize:
