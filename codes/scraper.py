@@ -58,7 +58,7 @@ def read_data(path):
 
 
 def standarize_unit(item):
-    print(item)
+    # print(item)
     if item['unit'] in ['l', 'ltr']:
         item['amount'] = str(float(item['amount']) * 1000)
         item['unit'] = "ml"
@@ -72,12 +72,12 @@ def standarize_unit(item):
 class DarazScraper:
     
     
-    def __init__(self, query, mode=run):
+    def __init__(self, query, mode="run"):
         self.query = query
         self.url = f'https://www.daraz.com.np/catalog/?ajax=true&q={query}'
         self.parse_path = f"data/{query}.csv"
         self.process_path = f"data/{query}_std.csv"
-        eval(f"self.{mode}()")
+        getattr(self, mode)()
     
     def get_request_json(self):
         res = requests.get(self.url).json()
@@ -91,7 +91,7 @@ class DarazScraper:
         data = self.get_request_json()
         
         items = [unit_parser(i, standarize) for i in data if unit_parser(i)]
-        print(items)
+        # print(items)
         path = self.parse_path
         save_data(path, items)
         return items
