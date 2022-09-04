@@ -92,32 +92,27 @@ class DarazScraper:
         
         items = [unit_parser(i, standarize) for i in data if unit_parser(i)]
         print(items)
-        path = f"data/{self.query}.csv"
+        path = self.parse_path
         save_data(self.query, path, items)
         return items
 
         
     def scrape(self):
-        if not check_product_exists(self.query):
+        if not os.path.isfile(self.parse_path):
             self.get_data(False)
+        else:
+            print("PRODUCT ALREADY EXISTS NO NEED TO SCRAP")
 
     def process(self):
         items = read_data(self.parse_path)
         items = [standarize_unit(item) for item in items]
         
-        path = f"data/{self.query}_std.csv"
+        path = self.process_path
         save_data(self.query, path, items)
 
     def run(self):
             self.scrape()
             self.process()
-
-def check_product_exists(product):
-    if os.path.isfile(f"{product}.csv"):
-        print("PRODUCT ALREADY EXISTS NO NEED TO SCRAP")
-        return True
-
-    return False
 
 
 if __name__ == "__main__":
