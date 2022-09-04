@@ -6,7 +6,7 @@ import re
 import csv
 
 
-PATTERN = r"^([A-Za-z ]*)(?:- )*([0-9]+.*)"
+PATTERN = r"^([A-Za-z ]*)(?:- )*([0-9]+[ g|kg|gm|ml|l|ltr]+)"
 
 def get_product():
     """
@@ -21,38 +21,39 @@ def get_product():
 class DarazScraper:
     
     def __init__(self, query):
-        self.url = f'https://www.daraz.com.np/catalog/?q={query}'
+        self.query = query
+        self.url = f'https://www.daraz.com.np/catalog/?ajax=true&q={query}'
     
     def get_request_json(self):
-        res = requests.get(self.url).text
-        # return res
-        soup = bs(res, 'html.parser') 
-        for data in soup.find_all("script"):
-            if "window.pageData" in data.text:
-                # print(data.text)
-                data = data.text.replace("window.pageData=", "")
-                break
-        # print(data)
-        return json.loads(data)['mods']['listItems']
+        res = requests.get(self.url).json()
+        return res['mods']['listItems']
     
     
     def save_data(self, items):
-        with open("data/items.csv", "w") as f:
+        with open(f"data/{self.query}.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerow(['Product', 'Quantity'])
             for item in items:
                 print(item)
-                writer.writerow([item[0][0].strip(), item[0][1]])
+                writer.writerow([item[0][0].strip(), item[0][1].strip()])
+    
+    def unit_parser(self, item):
+        patt = re.compile(PATTERN)
+        d = patt.findall(item['name'].lower())
+        if not d:
+            return 
+        if d[0][0]:
+            return d
     
     def get_data(self):
         """
-
         Returns:
             items (list): list of tuples containing the item name and its quantity  
         """
         data = self.get_request_json()
-        patt = re.compile(PATTERN)
-        items = [patt.findall(i['name']) for i in data if patt.findall(i['name'])]
+        
+        items = [self.unit_parser(i) for i in data if self.unit_parser(i)]
+        # items = [patt.findall(i['name'].lower()) for i in data if patt.findall(i['name'])]
         
         self.save_data(items)
         return items
