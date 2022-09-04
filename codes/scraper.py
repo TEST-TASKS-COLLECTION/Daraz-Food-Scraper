@@ -16,8 +16,9 @@ def get_product():
     """
     parser = argparse.ArgumentParser(description="A Daraz food product scraper")
     parser.add_argument("--prod", help="Food Product Name")
+    parser.add_argument("--mode", help="Mode to run your program (parse, process, run(default, parse + process)", default="run")
     args = parser.parse_args()
-    return args.prod
+    return args.prod, args.mode
     
 def unit_parser(item, standarize=False):
     patt = re.compile(PATTERN)
@@ -42,6 +43,19 @@ def save_data(product, path, data):
             print(item)
             writer.writerow([item["name"].strip(), item["amount"].strip(), item["unit"].strip()])
 
+def read_data(path):
+        items = []
+        with open(path) as f:
+            next(f)
+            r = csv.reader(f)
+            for i in r:
+                items.append({
+                    "name": i[0].strip(),
+                    "amount": i[1],
+                    "unit": i[2].strip()
+                })
+        return items
+
 
 def standarize_unit(item):
     print(item)
@@ -59,6 +73,9 @@ class DarazScraper:
     def __init__(self, query):
         self.query = query
         self.url = f'https://www.daraz.com.np/catalog/?ajax=true&q={query}'
+        self.parse_path = f"data/{query}.csv"
+        self.process_path = f"data/{query}_std.csv"
+        self.run()
     
     def get_request_json(self):
         res = requests.get(self.url).json()
@@ -74,47 +91,38 @@ class DarazScraper:
         data = self.get_request_json()
         
         items = [unit_parser(i, standarize) for i in data if unit_parser(i)]
-        # items = [patt.findall(i['name'].lower()) for i in data if patt.findall(i['name'])]
         print(items)
         path = f"data/{self.query}.csv"
-        save_data(items, path)
+        save_data(self.query, path, items)
         return items
-            # print(item.name)
-        # return soup.select_one(".title--wFj93")
+
+        
+    def scrape(self):
+        if not check_product_exists(self.query):
+            self.get_data(False)
+
+    def process(self):
+        items = read_data(self.parse_path)
+        items = [standarize_unit(item) for item in items]
+        
+        path = f"data/{self.query}_std.csv"
+        save_data(self.query, path, items)
+
+    def run(self):
+            self.scrape()
+            self.process()
 
 def check_product_exists(product):
-    if f"{product}.csv" in os.listdir('data'):
+    if os.path.isfile(f"{product}.csv"):
         print("PRODUCT ALREADY EXISTS NO NEED TO SCRAP")
         return True
 
     return False
 
-def scrape(product):
-    if not check_product_exists(product):
-        DarazScraper(product, False)
-
-def process(product):
-    items = []
-    with open(f"data/{product}.csv") as f:
-        next(f)
-        r = csv.reader(f)
-        for i in r:
-            items.append({
-                "name": i[0].strip(),
-                "amount": i[1],
-                "unit": i[2].strip()
-            })
-    items = [standarize_unit(item) for item in items]
-    
-    path = f"data/{product}_std.csv"
-    save_data(product, path, items)
-
-def run(product, standarize=True):
-        scrape(product)
-        process(product)
 
 if __name__ == "__main__":
     product = get_product()
     # scrape(product)
     # process(product)
+    scraper = DarazScraper(product)
     run(product)
