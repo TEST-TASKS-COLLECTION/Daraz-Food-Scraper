@@ -51,9 +51,9 @@ def unit_parser(item):
     d = patt.findall(item['name'].lower())
     if not d:
         return 
-    if d[0][0]:
+    if d[0][0] and d[0][2]:
         return_dict = {
-            "name": d[0][0].replace("-", "").strip().title(),
+            "name": d[0][0].replace("-", "").replace("(", "").strip().title(),
             "amount": float(d[0][1]),
             "unit": d[0][2].strip(),
         }
