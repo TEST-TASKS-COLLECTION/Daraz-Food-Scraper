@@ -8,7 +8,21 @@ import re
 import csv
 
 
-PATTERN = r"^([A-Za-z ]*)(?:- )*([0-9]+)([ g|kg|gm|ml|l|ltr]*)"
+PATTERN = r"^([A-Za-z ']*)(?:[\W]*)*([0-9]+)(?:[\W]*)*([g|kg|gm|ml|l|ltr|L|Kg|G]*)"
+UNITS = ["g", "kg", "gm", "ml", "l", "ltr", "L", "Kg", "G"]
+
+def standarize_unit(item):
+    # print(item)
+    if item['unit'] in ['l', 'ltr', "L"]:
+        item['amount'] = item['amount'] * 1000
+        item['unit'] = "ml"
+    elif item['unit'] in ['kg', 'Kg']:
+        item['amount'] = item['amount'] * 1000
+        item['unit'] = "gm"
+    elif item['unit'] in ['g', 'G']:
+        item['unit'] = "gm"
+    
+    return item
 
 def get_product():
     """
@@ -16,7 +30,7 @@ def get_product():
     """
     parser = argparse.ArgumentParser(description="A Daraz food product scraper")
     parser.add_argument("--prod", help="Food Product Name")
-    parser.add_argument("--mode", help="Mode to run your program (parse, process, run(default, scrap + process)", default="run")
+    parser.add_argument("--mode", help="Mode to run your program (extract, transform, run(default, extract + transform)", default="run")
     args = parser.parse_args()
     return args.prod, args.mode
     
@@ -28,20 +42,27 @@ def unit_parser(item, standarize=False):
     if d[0][0]:
         return_dict = {
             "name": d[0][0].strip().title(),
-            "amount": str(float(d[0][1])),
+            "amount": float(d[0][1]),
             "unit": d[0][2].strip(),
         }
-        if not standarize:
-            return return_dict
+        # if not standarize:
+        #     return return_dict
         return standarize_unit(return_dict)
 
-def save_data(path, data):
+def save_data(path, data, cols):
     with open(path, "w") as f:
         writer = csv.writer(f)
-        writer.writerow(['Product', 'Quantity', "Unit"])
-        for item in data:
-            # print(item)
-            writer.writerow([item["name"].strip(), str(float(item["amount"])).strip(), item["unit"].strip()])
+        # writer.writerow(['Product', 'Quantity', "Unit"])
+        writer.writerow(cols)
+        if len(cols) == 3:
+            for item in data:
+                # print(item)
+                writer.writerow([item["name"].strip(), str(float(item["amount"])).strip(), item["unit"].strip()])
+        elif len(cols) == 1:
+            for item in data:
+                writer.writerow([item.strip()])
+        else:
+            print("Incorrect format")
 
 def read_data(path):
         items = []
@@ -51,27 +72,13 @@ def read_data(path):
                 r = csv.reader(f)
                 for i in r:
                     items.append({
-                        "name": i[0].strip(),
-                        "amount": i[1],
-                        "unit": i[2].strip()
+                        "name": i[0].strip()
                     })
             return items
         except FileNotFoundError:
-            print("File doesn't exist try running in scrap mode or run mode")
+            print("File doesn't exist try running in extract mode or run mode")
 
 
-def standarize_unit(item):
-    # print(item)
-    if item['unit'] in ['l', 'ltr']:
-        item['amount'] = str(float(item['amount']) * 1000)
-        item['unit'] = "ml"
-    elif item['unit'] in ['kg']:
-        item['amount'] = str(float(item['amount']) * 1000)
-        item['unit'] = "gm"
-    elif item['unit'] in ['g']:
-        item['unit'] = "gm"
-    
-    return item
 
 
 class DarazScraper:
@@ -87,37 +94,28 @@ class DarazScraper:
     def get_request_json(self):
         res = requests.get(self.url).json()
         return res['mods']['listItems']
-
-    def get_data(self, standarize=True):
-        """
-        Returns:
-            items (list): list of tuples containing the item name and its quantity  
-        """
-        data = self.get_request_json()
         
-        items = [unit_parser(i, standarize) for i in data if unit_parser(i)]
-        # print(items)
-        path = self.parse_path
-        save_data(path, items)
-        return items
-
-        
-    def scrap(self):
+    def extract(self):
         if not os.path.isfile(self.parse_path):
-            self.get_data(False)
+            data = self.get_request_json()
+            items = [i['name'] for i in data if any(d.isdigit() for d in i["name"])]
+            path = self.parse_path
+            save_data(path, items, cols=["Product"])
         else:
             print("PRODUCT ALREADY EXISTS NO NEED TO SCRAP")
 
-    def process(self):
+    def transform(self):
         items = read_data(self.parse_path)
-        items = [standarize_unit(item) for item in items]
-        
-        path = self.process_path
-        save_data(path, items)
+        if items:
+            items = [unit_parser(i) for i in items if unit_parser(i)]
+            # items = [standarize_unit(item) for item in items]
+            
+            path = self.process_path
+            save_data(path=path, data = items, cols=['Product', 'Quantity', "Unit"])
 
     def run(self):
-            self.scrap()
-            self.process()
+            self.extract()
+            self.transform()
 
 
 if __name__ == "__main__":
