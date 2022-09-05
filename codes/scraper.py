@@ -8,11 +8,18 @@ import re
 import csv
 
 
-PATTERN = r"^([A-Za-z ']*)(?:[\W]*)*([0-9]+)(?:[\W]*)*([g|kg|gm|ml|l|ltr|L|Kg|G]*)"
+PATTERN = r"^([A-Za-z '()&_-]*)(?:[\W|\b|]*)*([0-9]+)(?:[\W]*)*([g|kg|gm|ml|l|ltr|L|Kg|G]*)"
 UNITS = ["g", "kg", "gm", "ml", "l", "ltr", "L", "Kg", "G"]
 
 def standarize_unit(item):
-    # print(item)
+    """
+
+    Args:
+        item (dict): a dictionary of not standarized input item
+
+    Returns:
+        item (dict): a dictionary of standarized item
+    """
     if item['unit'] in ['l', 'ltr', "L"]:
         item['amount'] = item['amount'] * 1000
         item['unit'] = "ml"
@@ -34,7 +41,12 @@ def get_product():
     args = parser.parse_args()
     return args.prod, args.mode
     
-def unit_parser(item, standarize=False):
+def unit_parser(item):
+    """
+    Gets a product name and returns a standarized dictionary of an item
+    Args:
+        item (str): an items name
+    """
     patt = re.compile(PATTERN)
     d = patt.findall(item['name'].lower())
     if not d:
@@ -96,6 +108,9 @@ class DarazScraper:
         return res['mods']['listItems']
         
     def extract(self):
+        """
+        extract the required data from the web and saves it (if that file isn't extracted already) 
+        """
         if not os.path.isfile(self.parse_path):
             data = self.get_request_json()
             items = [i['name'] for i in data if any(d.isdigit() for d in i["name"])]
@@ -105,6 +120,9 @@ class DarazScraper:
             print("PRODUCT ALREADY EXISTS NO NEED TO SCRAP")
 
     def transform(self):
+        """
+        loads the data and transforms it into a clean format and save into a new file 
+        """
         items = read_data(self.parse_path)
         if items:
             items = [unit_parser(i) for i in items if unit_parser(i)]
@@ -114,8 +132,11 @@ class DarazScraper:
             save_data(path=path, data = items, cols=['Product', 'Quantity', "Unit"])
 
     def run(self):
-            self.extract()
-            self.transform()
+        """
+        Runs both extract and transform function sequentially
+        """
+        self.extract()
+        self.transform()
 
 
 if __name__ == "__main__":
