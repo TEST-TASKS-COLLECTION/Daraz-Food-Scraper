@@ -8,8 +8,9 @@ import re
 import csv
 
 
-PATTERN = r"^([A-Za-z '()&_-]*)(?:[\W|\b|]*)*([0-9]+)(?:[\W]*)*([g|kg|gm|ml|l|ltr|L|Kg|G]*)"
-UNITS = ["g", "kg", "gm", "ml", "l", "ltr", "L", "Kg", "G"]
+PATTERN = r"^([A-Za-z '()&_-]*)(?:[\W|\b|]*)*([0-9]+)(?:[\W]*)*([g|kg|gm|ml|l|ltr]*)"
+# PATTERN = r"^([A-Za-z '()&_-]*)(?:[\W|\b|]*)*([0-9]+)(?:[\W]*)*([g|kg|gm|ml|l|ltr|L|Kg|G]*)"
+# UNITS = ["g", "kg", "gm", "ml", "l", "ltr", "L", "Kg", "G"]
 
 def standarize_unit(item):
     """
@@ -20,13 +21,13 @@ def standarize_unit(item):
     Returns:
         item (dict): a dictionary of standarized item
     """
-    if item['unit'] in ['l', 'ltr', "L"]:
+    if item['unit'] in ['l', 'ltr']:
         item['amount'] = item['amount'] * 1000
         item['unit'] = "ml"
-    elif item['unit'] in ['kg', 'Kg']:
+    elif item['unit'] in ['kg']:
         item['amount'] = item['amount'] * 1000
         item['unit'] = "gm"
-    elif item['unit'] in ['g', 'G']:
+    elif item['unit'] in ['g']:
         item['unit'] = "gm"
     
     return item
