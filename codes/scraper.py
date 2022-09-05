@@ -53,7 +53,7 @@ def unit_parser(item):
         return 
     if d[0][0]:
         return_dict = {
-            "name": d[0][0].strip().title(),
+            "name": d[0][0].replace("-", "").strip().title(),
             "amount": float(d[0][1]),
             "unit": d[0][2].strip(),
         }
